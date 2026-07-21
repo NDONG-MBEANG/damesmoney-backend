@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /users/{uid} {
+      allow read: if request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /parties/{partieId} {
+      allow read: if request.auth.uid in [resource.data.joueur1_uid, resource.data.joueur2_uid];
+      allow write: if false;
+    }
+
+    match /transactions/{id} {
+      allow read: if request.auth.uid == resource.data.uid;
+      allow write: if false;
+    }
+
+    match /revenus_app/{docId} {
+      allow read, write: if false;
+    }
+
+  }
+}
