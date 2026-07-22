@@ -69,4 +69,46 @@ exports.handler = async function (event) {
   });
 
   try {
-    const { accountCode, urlC
+    const { accountCode, restUrlCode } = config();
+    const secret = await obtenirCleSecrete();
+
+    const reponse = await fetch(`https://api.mypvit.pro/${restUrlCode}/rest`, {
+      method: "POST",
+      headers: {
+        "X-Secret": secret,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        agent: "DAMES-APP",
+        amount: montant,
+        callback_url_code: "",
+        customer_account_number: telephone,
+        merchant_operation_account_code: accountCode,
+        transaction_type: "GIVE_CHANGE",
+        owner_charge: "MERCHANT",
+        owner_charge_operator: "MERCHANT",
+        free_info: "Retrait wallet",
+        product: "RETRAIT WALLET",
+        operator_code: operateur,
+        reference,
+        service: "RESTFUL",
+      }),
+    });
+
+    const resultat = await reponse.json();
+
+    if (resultat.status === "SUCCESS") {
+      await db.collection("transactions").doc(reference).update({ statut: "reussi" });
+      return { statusCode: 200, body: JSON.stringify({ succes: true, message: "Retrait effectué avec succès." }) };
+    } else {
+      await userRef.update({ solde: admin.firestore.FieldValue.increment(montant) });
+      await db.collection("transactions").doc(reference).update({ statut: "echec" });
+      return { statusCode: 500, body: JSON.stringify({ erreur: resultat.message || "Échec du retrait, solde recrédité." }) };
+    }
+  } catch (erreur) {
+    await userRef.update({ solde: admin.firestore.FieldValue.increment(montant) });
+    await db.collection("transactions").doc(reference).update({ statut: "echec" });
+    return { statusCode: 500, body: JSON.stringify({ erreur: "Erreur lors du retrait, solde recrédité." }) };
+  }
+};
