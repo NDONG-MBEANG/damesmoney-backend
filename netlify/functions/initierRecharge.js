@@ -38,7 +38,7 @@ exports.handler = async function (event) {
     return { statusCode: 400, body: JSON.stringify({ erreur: "Téléphone et opérateur requis." }) };
   }
 
-  const { accountCode, urlCode, callbackCode } = config();
+  const { accountCode, restUrlCode, callbackCode } = config();
 
   let secret;
   try {
@@ -60,7 +60,7 @@ exports.handler = async function (event) {
   });
 
   try {
-    const reponse = await fetch(`https://api.mypvit.pro/${urlCode}/rest`, {
+    const reponse = await fetch(`https://api.mypvit.pro/${restUrlCode}/rest`, {
       method: "POST",
       headers: {
         "X-Secret": secret,
@@ -100,4 +100,6 @@ exports.handler = async function (event) {
     };
   } catch (erreur) {
     await db.collection("transactions").doc(reference).update({ statut: "echec_initiation" });
-    return { statusCode: 500, body: JSON.stringify({ erreur: "Erreur réseau vers MyPVit." })
+    return { statusCode: 500, body: JSON.stringify({ erreur: "Erreur réseau vers MyPVit." }) };
+  }
+};
